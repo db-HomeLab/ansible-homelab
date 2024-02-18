@@ -1,0 +1,8 @@
+---
+
+vlan_list:
+  - 100
+  - 11
+
+openstack_provider_vlan_list:
+  - 101

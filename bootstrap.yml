@@ -1,0 +1,59 @@
+---
+
+- hosts: pi4
+  tasks:
+    - name: Get last octet of ansible_host
+      ansible.builtin.set_fact:
+        host_ip_octet: "{{ (ansible_host | ipaddr('address') | split('.'))[-1] }}"
+
+    - name: Set timezone to SAST
+      become: True
+      community.general.timezone:
+        name: Africa/Johannesburg
+
+    - name: Add the 8021q module and make sure it is loaded after reboots
+      become: True
+      community.general.modprobe:
+        name: 8021q
+        state: present
+        persistent: present
+
+    - name: Template regular VLAN settings
+      become: True
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/templates/pi4/regular-vlan-config.service.j2"
+        dest: "/etc/systemd/system/vlan{{ item }}.service"
+      loop: "{{ vlan_list }}"
+      notify: restart vlan interfaces
+
+    - name: Template openstack VLAN settings
+      become: True
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/templates/pi4/provider-vlan-config.service.j2"
+        dest: "/etc/systemd/system/vlan{{ item }}.service"
+      loop: "{{ openstack_provider_vlan_list }}"
+      notify: restart openstack vlan interfaces
+
+  handlers:
+    - name: restart vlan interfaces
+      become: True
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        name: "vlan{{ item }}.service"
+        state: started
+        enabled: yes
+      loop: "{{ vlan_list }}"
+
+      loop: "{{ openstack_provider_vlan_list }}"
+    - name: restart openstack vlan interfaces
+      become: True
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        name: "vlan{{ item }}.service"
+        state: started
+        enabled: yes
+      loop: "{{ openstack_provider_vlan_list }}"
+
+
+    # ansible.builtin.template:
+    #   src: 

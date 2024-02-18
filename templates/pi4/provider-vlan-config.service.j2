@@ -1,0 +1,12 @@
+[Unit]
+Description=Create VLAN {{ item }}
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/bin/sh -c "/usr/sbin/ip link add link enabcm6e4ei0 name vlan{{ item }} type vlan id {{ item }} && /usr/sbin/ip link set dev vlan{{ item }} up"
+ExecStop=/bin/sh -c "/usr/sbin/ip link set dev vlan{{ item }} down && /usr/sbin/ip link del vlan{{ item }}"
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
