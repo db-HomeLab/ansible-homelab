@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ethtool -K {{ target_nic }} gso off gro off tso off tx off rx off

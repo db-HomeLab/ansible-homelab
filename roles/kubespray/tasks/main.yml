@@ -1,0 +1,41 @@
+- block:
+  - name: Clone kubespray repo
+    ansible.builtin.git:
+      repo: https://github.com/kubernetes-sigs/kubespray.git
+      dest: /tmp/kubespray
+      single_branch: true
+      version: release-2.25
+
+  - name: Create staing inventory dir
+    ansible.builtin.copy:
+      src: /tmp/kubespray/inventory/sample/
+      dest: /tmp/kubespray/inventory/mycluster
+
+  - name: Run kubespray.py inventory script
+    ansible.builtin.command: "python {{ playbook_dir }}/inventories/kubespray.py"
+    register: inventory_output
+    changed_when: false
+
+  - name: Write new kubespray inventory
+    ansible.builtin.copy:
+      content: "{{ inventory_output.stdout }}"
+      dest: /tmp/kubespray/inventory/mycluster/inventory.yaml
+
+  - name: Copy required configs
+    ansible.builtin.copy:
+      src: "{{ role_path }}/files/{{ item.src }}"
+      dest: "/tmp/kubespray/inventory/mycluster/group_vars/{{ item.dest }}"
+    loop:
+      - { "src": "all.yml", "dest": "all/all.yml" }
+      - { "src": "k8s-cluster.yml", "dest": "k8s_cluster/k8s-cluster.yml" }
+
+  - name: Run Kubespray playbook with generated inventory
+    ansible.builtin.shell: |
+      ansible-playbook -i inventory/mycluster/inventory.yaml cluster.yml
+    environment:
+      ANSIBLE_CONFIG: "/tmp/kubespray/ansible.cfg"
+    args:
+      chdir: "/tmp/kubespray"
+
+  delegate_to: localhost
+  run_once: true

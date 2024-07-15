@@ -1,0 +1,70 @@
+---
+
+  - name: Set timezone to SAST
+    community.general.timezone:
+      name: Africa/Johannesburg
+
+  - name: Configure network
+    block:
+      - name: Add the 8021q module and make sure it is loaded after reboots
+        become: True
+        community.general.modprobe:
+          name: 8021q
+          state: present
+          persistent: present
+
+      - name: Install ifupdown
+        ansible.builtin.apt:
+          name:
+            - net-tools
+            - ifupdown
+            - bridge-utils
+            - vlan
+            - resolvconf
+          state: present
+          update_cache: true
+
+      - name: Remove netplan
+        ansible.builtin.apt:
+          name: "netplan.io"
+          purge: true
+          state: absent
+
+      - name: Disable networkd services
+        ansible.builtin.systemd_service:
+          name: "{{ item }}"
+          enabled: false
+          masked: true
+        loop:
+          - systemd-networkd
+          - systemd-networkd.socket
+          - networkd-dispatcher
+          - systemd-networkd-wait-online
+          - systemd-resolved
+
+      - name: Template ifupdown bridge interfaces file
+        ansible.builtin.template:
+          src: "{{ role_path }}/templates/bridge_interfaces.j2"
+          dest: /etc/network/interfaces
+          mode: "0644"
+        register: bridge_interfaces_file
+
+      - name: Template ifupdown vlan interfaces file
+        ansible.builtin.template:
+          src: "{{ role_path }}/templates/vlan_interfaces.j2"
+          dest: /etc/network/interfaces.d/vlans
+          mode: "0644"
+        register: vlan_interfaces_file
+
+      - name: Reboot node to apply network changes
+        ansible.builtin.reboot:
+        when: bridge_interfaces_file.changed
+        register: interfaces_restarted
+
+      - name: Restart networking service to modify VLANs
+        ansible.builtin.systemd_service:
+          name: networking
+          state: restarted
+        when:
+          - vlan_interfaces_file.changed
+          - not interfaces_restarted.changed

@@ -1,0 +1,15 @@
+auto vlan11
+iface vlan11 inet static
+    vlan-raw-device br0
+    vlan-id 11
+    address 10.0.11.{{ (ansible_host | split('.'))[-1] }}
+    netmask 255.255.255.0
+    mtu {{ network_mtu }}
+
+auto vlan100
+iface vlan100 inet static
+    vlan-raw-device br0
+    vlan-id 100
+    address 10.0.100.{{ (ansible_host | split('.'))[-1] }}
+    netmask 255.255.255.0
+    mtu {{ network_mtu }}

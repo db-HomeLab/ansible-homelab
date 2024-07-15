@@ -1,0 +1,41 @@
+source /etc/network/interfaces.d/*
+
+auto lo
+iface lo inet loopback
+
+auto {{ br0_interface }}
+iface {{ br0_interface }} inet manual
+    mtu {{ network_mtu }}
+
+auto veth0
+iface veth0 inet manual
+    pre-up ip link add veth0 type veth peer name provider || true
+    post-down ip link del veth0 || true
+    post-up brctl addif br0 veth0 || true
+    post-up bridge vlan add dev veth0 vid 10-101 master || true
+    mtu {{ network_mtu }}
+
+auto provider
+iface provider inet manual
+    pre-up ip link add provider type veth peer name veth0 || true
+    post-down ip link del provider || true
+    mtu {{ network_mtu }}
+
+auto br0
+iface br0 inet static
+    post-up ip link set name br0 type bridge vlan_filtering 1
+    post-up bridge vlan add dev br0 vid 1 pvid untagged self
+    post-up bridge vlan add dev br0 vid 10-101 self
+    post-up bridge vlan add dev eno1 vid 1 pvid untagged master
+    post-up bridge vlan add dev eno1 vid 10-101 master
+    post-up bridge vlan add dev veth0 vid 10-101 master
+    up brctl stp br0 off
+    bridge_stp off
+    bridge_waitport 0
+    bridge_fd 0
+    bridge_ports {{ br0_interface }} veth0
+    mtu {{ network_mtu }}
+    address {{ ansible_host }}
+    netmask 255.255.255.0
+    gateway 10.0.10.1
+    dns-nameservers 10.0.10.5

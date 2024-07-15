@@ -1,0 +1,9 @@
+---
+
+- hosts: controlplane
+  become: true
+  roles:
+    # fixes I218-V nic in 4790k machine
+    - { role: fix_e1000e }
+    - { role: bootstrap }
+    - { role: kubespray, become: false, tags: kubespray }

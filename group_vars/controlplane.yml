@@ -1,0 +1,4 @@
+---
+
+br0_interface: "eno1"
+network_mtu: 9000

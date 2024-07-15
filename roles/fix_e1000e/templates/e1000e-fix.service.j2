@@ -1,0 +1,11 @@
+[Unit]
+Description="Fix for {{ target_nic }} hang errors"
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/etc/systemd/system/{{ target_nic }}-fix.sh
+
+[Install]
+WantedBy=multi-user.target

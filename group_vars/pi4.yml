@@ -1,5 +1,7 @@
 ---
 
+br0_interface: enabcm6e4ei0
+
 vlan_list:
   - 100
   - 11

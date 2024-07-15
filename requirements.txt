@@ -1,8 +1,9 @@
 ansible
+ansible-lint
 certifi==2022.12.7
 chardet==3.0.4
 click==6.7
-flake8==3.5.0
+#flake8==3.5.0
 httplib2==0.19.0
 idna==2.7
 mccabe==0.6.1
@@ -13,3 +14,5 @@ requests==2.20.0
 urllib3~=1.24
 requests_cache==0.4.13
 netaddr
+jmespath==1.0.1
+jsonschema==4.22.0
